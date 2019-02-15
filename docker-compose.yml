@@ -1,0 +1,65 @@
+version: "3.7"
+
+services:
+  powerdns-admin:
+    image: hsrnetwork/powerdns-admin:stable
+    hostname: powerdns-admin
+    ports:
+      - "9191:9191"
+    volumes:
+      - /path/to/configs/development.py:/powerdns-admin/config.py
+    environment:
+      - ENVIRONMENT=development
+      - PDA_DB_HOST=powerdns-admin-mysql
+      - PDA_DB_NAME=powerdns_admin
+      - PDA_DB_USER=powerdns_admin
+      - PDA_DB_PASSWORD=changeme
+      - PDA_DB_PORT=3306
+      - PDNS_HOST=pdns-server
+      - PDNS_API_KEY=changeme
+
+  powerdns-admin-mysql:
+    image: mysql/mysql-server:8.0.15
+    hostname: powerdns-admin-mysql
+    volumes:
+      - /path/to/mysql/data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=powerdns_admin
+      - MYSQL_USER=powerdns_admin
+      - MYSQL_PASSWORD=changeme
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+
+  pdns-server:
+    image: psitrax/powerdns:4.1.5
+    hostname: powerdns-ns
+    ports:
+      - "53:53"
+      - "53:53/udp"
+    command: >
+      --api=yes
+      --api-key=$${PDNS_API_KEY}
+      --webserver-address=0.0.0.0
+      --webserver-allow-from=$${PDNS_WEBSERVER_ALLOW_FROM}
+    environment:
+      - MYSQL_HOST=pdns-mysql
+      - MYSQL_USER=powerdns_ns_admin
+      - MYSQL_PASS=powerdns_ns_admin
+      - PDNS_API_KEY=changeme
+      - PDNS_WEBSERVER_ALLOW_FROM=0.0.0.0/0
+
+  pdns-server-mysql:
+    image: mysql/mysql-server:8.0.15
+    hostname: powerdns-ns-mysql
+    volumes:
+      - /path/to/pdns-mysql/data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=powerdns_ns_admin
+      - MYSQL_USER=powerdns_ns_admin
+      - MYSQL_PASSWORD=${PDNS_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5

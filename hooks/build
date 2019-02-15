@@ -1,0 +1,2 @@
+#!/bin/sh
+docker build --build-arg ENVIRONMENT=development -t $IMAGE_NAME .
