@@ -7,6 +7,9 @@ Dockerized version of https://github.com/ngoduykhanh/PowerDNS-Admin
 ## Usage
 **Note**: The default password of this image is `SuperSecretDefaultPassword`.
 
+## DB Configuartion
+See inside the official `mysql/mysql-server` `docker-entrypoint.sh` file to check which environment variables are available to configure the mysql containers (https://github.com/mysql/mysql-docker/blob/mysql-server/8.0/docker-entrypoint.sh).
+
 ## Getting Started
 ```bash
 docker-compose up -d

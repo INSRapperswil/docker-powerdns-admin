@@ -19,7 +19,7 @@ services:
       - PDNS_API_KEY=changeme
 
   powerdns-admin-mysql:
-    image: mysql/mysql-server:8.0.15
+    image: mysql/mysql-server:8.0.17
     hostname: powerdns-admin-mysql
     volumes:
       - /path/to/mysql/data:/var/lib/mysql
@@ -33,7 +33,7 @@ services:
       retries: 5
 
   pdns-server:
-    image: psitrax/powerdns:4.1.5
+    image: psitrax/powerdns:4.1.10
     hostname: powerdns-ns
     ports:
       - "53:53"
@@ -51,7 +51,7 @@ services:
       - PDNS_WEBSERVER_ALLOW_FROM=0.0.0.0/0
 
   pdns-server-mysql:
-    image: mysql/mysql-server:8.0.15
+    image: mysql/mysql-server:8.0.17
     hostname: powerdns-ns-mysql
     volumes:
       - /path/to/pdns-mysql/data:/var/lib/mysql
