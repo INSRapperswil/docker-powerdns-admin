@@ -2,31 +2,42 @@ version: "3.7"
 
 services:
   powerdns-admin:
-    image: hsrnetwork/powerdns-admin:stable
+    image: hsrnetwork/powerdns-admin:latest
     hostname: powerdns-admin
+    restart: unless-stopped
     ports:
       - "9191:9191"
-    volumes:
-      - /path/to/configs/development.py:/powerdns-admin/config.py
+    # To override the default config.py:
+    #volumes:
+      #- /path/to/configs/config.py:/powerdns-admin/config.py
     environment:
-      - ENVIRONMENT=development
-      - PDA_DB_HOST=powerdns-admin-mysql
-      - PDA_DB_NAME=powerdns_admin
-      - PDA_DB_USER=powerdns_admin
-      - PDA_DB_PASSWORD=changeme
-      - PDA_DB_PORT=3306
-      - PDNS_HOST=pdns-server
-      - PDNS_API_KEY=changeme
+      SIGNUP_ENABLED: 'false'
+      SECRET_KEY: MyAwesomeSecretKey
+      BIND_ADDRESS: 0.0.0.0
+      PORT: 9191
+      LOG_LEVEL: INFO
+      SQLA_DB_HOST: powerdns-admin-mysql
+      SQLA_DB_NAME: powerdns-admin
+      SQLA_DB_USER: powerdns-admin-svc-user
+      SQLA_DB_PASSWORD: powerdns-admin-svc-user-pw
+      SQLA_DB_PORT: 3306
+      PDNS_HOST: pdns-server
+      PDNS_API_KEY: changeme
+      PDNS_PORT: 8081
+    depends_on:
+      - powerdns-admin-mysql
 
   powerdns-admin-mysql:
     image: mysql/mysql-server:8.0.17
-    hostname: powerdns-admin-mysql
-    volumes:
-      - /path/to/mysql/data:/var/lib/mysql
+    hostname: powerdns-admin-db
+    restart: unless-stopped
+    # To persist the mysql data:
+    #volumes:
+      #- /path/to/mysql/data:/var/lib/mysql
     environment:
-      - MYSQL_DATABASE=powerdns_admin
-      - MYSQL_USER=powerdns_admin
-      - MYSQL_PASSWORD=changeme
+      MYSQL_DATABASE: powerdns-admin
+      MYSQL_USER: powerdns-admin-svc-user
+      MYSQL_PASSWORD: powerdns-admin-svc-user-pw
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 10s
@@ -34,31 +45,37 @@ services:
 
   pdns-server:
     image: psitrax/powerdns:4.1.10
-    hostname: powerdns-ns
+    hostname: powerdns
+    restart: unless-stopped
     ports:
       - "53:53"
       - "53:53/udp"
     command: >
       --api=yes
-      --api-key=$${PDNS_API_KEY}
+      --api-key=changeme
       --webserver-address=0.0.0.0
-      --webserver-allow-from=$${PDNS_WEBSERVER_ALLOW_FROM}
+      --webserver-allow-from=0.0.0.0/0
     environment:
-      - MYSQL_HOST=pdns-mysql
-      - MYSQL_USER=powerdns_ns_admin
-      - MYSQL_PASS=powerdns_ns_admin
-      - PDNS_API_KEY=changeme
-      - PDNS_WEBSERVER_ALLOW_FROM=0.0.0.0/0
+      MYSQL_HOST: pdns-server-mysql
+      MYSQL_DB: powerdns
+      MYSQL_USER: powerdns-svc-user
+      MYSQL_PASS: powerdns-svc-user-pw
+    depends_on:
+      - pdns-server-mysql
 
   pdns-server-mysql:
     image: mysql/mysql-server:8.0.17
-    hostname: powerdns-ns-mysql
-    volumes:
-      - /path/to/pdns-mysql/data:/var/lib/mysql
+    hostname: powerdns-db
+    restart: unless-stopped
+    # To persist the mysql data:
+    #volumes:
+      #- /path/to/pdns-mysql/data:/var/lib/mysql
     environment:
-      - MYSQL_DATABASE=powerdns_ns_admin
-      - MYSQL_USER=powerdns_ns_admin
-      - MYSQL_PASSWORD=${PDNS_DB_PASSWORD}
+      MYSQL_DATABASE: powerdns
+      MYSQL_USER: powerdns-svc-user
+      MYSQL_PASSWORD: powerdns-svc-user-pw
+    # Required because otherwise the pdns-server crashes with Authentication plugin 'caching_sha2_password' cannot be loaded: Error loading shared library /usr/lib/mysql/plugin/caching_sha2_password.so: No such file or directory
+    command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 10s
