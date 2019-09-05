@@ -1,6 +1,8 @@
 # PowerDNS Admin Web UI
 Dockerized version of https://github.com/ngoduykhanh/PowerDNS-Admin.
 
+The prebuilt Docker image can be found here: https://hub.docker.com/r/hsrnetwork/powerdns-admin
+
 ## Why this Docker
 Unfortunately PowerDNS-Admin does not offer a clean and especially easy way to configure a dockerized version of it's awsome software. There are some attempts (e.g. https://github.com/ngoduykhanh/PowerDNS-Admin/pull/535) to achieve this but to be honest it's still not what we would call an "easy to configure" Docker image. That's mainly because of the software itself which does not allow an easy configuration of some settings like PDNS API and local authentication. We chose to inject these settings via Docker environment variables directly into the PowerDNS-Admin database and therefore allow a staight forward configuration (even though it's kind of hacky) - PowerDNS-Admin forces us to do so.
 
