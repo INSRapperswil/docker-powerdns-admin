@@ -92,7 +92,7 @@ RUN sed -i "s|SECRET_KEY =.*|SECRET_KEY = os.environ.get('SECRET_KEY', 'MyAwesom
   sed -i "s|SQLA_DB_NAME =.*|SQLA_DB_NAME = os.environ.get('SQLA_DB_NAME', 'powerdns-admin')|g" /powerdns-admin/config.py && \
   sed -i "s|LOG_FILE =.*|LOG_FILE = ''|g" /powerdns-admin/config.py && \
   sed -i "s|SALT =.*|SALT = '$2b$12$yLUMTIfl21FKJQpTkRQXCu'|g" /powerdns-admin/config.py && \
-  echo "SIGNUP_ENABLED = os.environ.get('SIGNUP_ENABLED', 'false')" >> /powerdns-admin/config.py
+  echo "SIGNUP_ENABLED = os.environ.get('SIGNUP_ENABLED', 'False')" >> /powerdns-admin/config.py
 
 # Copy the entrypoint script to the image and make is executable
 COPY entrypoint.sh /powerdns-admin/entrypoint.sh

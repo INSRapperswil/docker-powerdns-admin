@@ -68,10 +68,10 @@ fi
 
 # User authentication settings
 if [[ -z ${SIGNUP_ENABLED} ]]; then
-  SIGNUP_ENABLED=false;
+  SIGNUP_ENABLED=False;
 fi
 
-if [[ -z ${ADMIN_USER} && ${SIGNUP_ENABLED} -eq false ]]; then
+if [[ -z ${ADMIN_USER} && ${SIGNUP_ENABLED} == "False" ]]; then
   ADMIN_USER=admin;
   echo "A ADMIN_USER must be configured if you disable signup. Defaulting: $ADMIN_USER".
 fi
@@ -81,10 +81,10 @@ if [[ -z ${ADMIN_USER_PASSWORD} ]]; then
   echo "A ADMIN_USER_PASSWORD must be configured if you disable signup. Default: $ADMIN_USER_PASSWORD".
 fi
 
-#if [[ ${SIGNUP_ENABLED} -eq false ]]; then
+if [[ ${SIGNUP_ENABLED} == "False" ]]; then
   # Hash the PW
-  #ADMIN_USER_PASSWORD_HASHED=$(python3 -c "import os; import bcrypt; print(bcrypt.hashpw(str(os.getenv('ADMIN_USER_PASSWORD', '12345')), bcrypt.gensalt()))")
-#fi
+  ADMIN_USER_PASSWORD_HASHED=$(python3 -c "import os; import bcrypt; print(bcrypt.hashpw(str(os.getenv('ADMIN_USER_PASSWORD', '12345')).encode(), bcrypt.gensalt()).decode())")
+fi
 
 # Wait for us to be able to connect to #mysql before proceeding
 echo "===> Waiting for $SQLA_DB_HOST #mysql service"
@@ -108,7 +108,6 @@ if [ ! -d "${DB_MIGRATION_DIR}" ]; then
   flask db migrate -m "Init DB" --directory ${DB_MIGRATION_DIR}
   flask db upgrade --directory ${DB_MIGRATION_DIR}
   ./init_data.py
-
 else
   echo "---> Running DB Migration"
   set +e
@@ -122,18 +121,17 @@ echo "===> Update PDNS API connection info"
 mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'pdns_api_url', '${PDNS_PROTO}://${PDNS_HOST}:${PDNS_PORT}') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'pdns_api_url') LIMIT 1;"
 mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'pdns_api_key', '${PDNS_API_KEY}') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'pdns_api_key') LIMIT 1;"
 mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'pdns_version', '${PDNS_VERSION}') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'pdns_version') LIMIT 1;"
-#if [[ ${SIGNUP_ENABLED} = false ]]; then
-#  echo "===> Update default admin account"
-#  mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'local_db_enabled', 'True') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'local_db_enabled') LIMIT 1;"
-#  mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'signup_enabled', '${SIGNUP_ENABLED}') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'signup_enabled') LIMIT 1;"
-#  mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO user (username, password, firstname, lastname, email, avatar, otp_secret) SELECT * FROM (SELECT '${ADMIN_USER}' as username, '${ADMIN_USER_PASSWORD_HASHED}' as password, 'admin' as firstname, 'admin' as lastname, 'admin@example.com' as email, NULL as avatar, NULL as otp_secret) AS tmp WHERE NOT EXISTS (SELECT username FROM user WHERE username = '${ADMIN_USER}') LIMIT 1;"
-#fi
+if [[ ${SIGNUP_ENABLED} == "False" ]]; then
+  echo "===> Update default admin account"
+  mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'local_db_enabled', 'True') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'local_db_enabled') LIMIT 1;"
+  mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'signup_enabled', '${SIGNUP_ENABLED}') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'signup_enabled') LIMIT 1;"
+  mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO user (username, password, firstname, lastname, email, avatar, otp_secret, role_id) SELECT * FROM (SELECT '${ADMIN_USER}' as username, '${ADMIN_USER_PASSWORD_HASHED}' as password, 'admin' as firstname, 'admin' as lastname, 'admin@example.com' as email, NULL as avatar, NULL as otp_secret, 1 as role_id) AS tmp WHERE NOT EXISTS (SELECT username FROM user WHERE username = '${ADMIN_USER}') LIMIT 1;"
+fi
 
 # Update pdns api setting if environment variable is changed.
 mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "UPDATE setting SET value='${PDNS_PROTO}://${PDNS_HOST}:${PDNS_PORT}' WHERE name='pdns_api_url';"
 mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "UPDATE setting SET value='${PDNS_API_KEY}' WHERE name='pdns_api_key';"
 mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "UPDATE setting SET value='${PDNS_VERSION}' WHERE name='pdns_version';"
-
 
 GUNICORN_ARGS="-t ${GUNICORN_TIMEOUT} --workers ${GUNICORN_WORKERS} --bind ${BIND_ADDRESS}:${PORT} --log-level ${LOG_LEVEL}"
 if [ "$1" == gunicorn ]; then
