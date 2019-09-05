@@ -11,11 +11,15 @@ services:
     #volumes:
       #- /path/to/configs/config.py:/powerdns-admin/config.py
     environment:
-      SIGNUP_ENABLED: 'false'
-      SECRET_KEY: MyAwesomeSecretKey
+      #SIGNUP_ENABLED: 'false'
+      #ADMIN_USER: admin
+      #ADMIN_USER_PASSWORD: 12345
+      SECRET_KEY: I0o3qqd2eQE859gPpVCGm4EYW4fJTVnGnX2dJZ9YIejq20SJ77tWT
       BIND_ADDRESS: 0.0.0.0
       PORT: 9191
-      LOG_LEVEL: INFO
+      GUINCORN_TIMEOUT: 120
+      GUNICORN_WORKERS: 4
+      LOG_LEVEL: DEBUG
       SQLA_DB_HOST: powerdns-admin-mysql
       SQLA_DB_NAME: powerdns-admin
       SQLA_DB_USER: powerdns-admin-svc-user
@@ -24,6 +28,8 @@ services:
       PDNS_HOST: pdns-server
       PDNS_API_KEY: changeme
       PDNS_PORT: 8081
+      PDNS_VERSION: 4.1.1
+      PDNS_PROTO: http
     depends_on:
       - powerdns-admin-mysql
 

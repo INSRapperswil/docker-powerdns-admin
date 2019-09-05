@@ -24,6 +24,7 @@ COPY --from=builder /powerdns-admin/package.json .
 COPY --from=builder /powerdns-admin/requirements.txt .
 COPY --from=builder /powerdns-admin/run.py .
 COPY --from=builder /powerdns-admin/.yarnrc .
+COPY --from=builder /powerdns-admin/init_data.py .
 
 # Install curl which is used to download node/yarn related APT repository stuff
 RUN apt-get update -y && \
@@ -46,7 +47,6 @@ RUN apt-get update -y && \
       locales-all \
       python3-pip \
       python3-dev \
-      supervisor \
       mysql-client \
       netcat \
       yarn \
@@ -77,21 +77,22 @@ RUN pip3 install -r requirements.txt
 RUN yarn install --pure-lockfile
 RUN flask assets build
 
+# Fix the permissions
+RUN chown -R www-data:www-data /powerdns-admin/
+
 # Set some default values into the default config.py file
 RUN sed -i "s|SECRET_KEY =.*|SECRET_KEY = os.environ.get('SECRET_KEY', 'MyAwesomeSecretKey')|g" /powerdns-admin/config.py && \
   sed -i "s|BIND_ADDRESS =.*|BIND_ADDRESS = os.environ.get('BIND_ADDRESS', '0.0.0.0')|g" /powerdns-admin/config.py && \
   sed -i "s|PORT =.*|PORT = os.environ.get('PORT', '9191')|g" /powerdns-admin/config.py && \
-  sed -i "s|LOG_LEVEL =.*|LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')|g" /powerdns-admin/config.py && \
+  sed -i "s|LOG_LEVEL =.*|LOG_LEVEL = os.environ.get('LOG_LEVEL', 'info')|g" /powerdns-admin/config.py && \
   sed -i "s|SQLA_DB_USER =.*|SQLA_DB_USER = os.environ.get('SQLA_DB_USER', 'powerdns-svc-user')|g" /powerdns-admin/config.py && \
   sed -i "s|SQLA_DB_PASSWORD =.*|SQLA_DB_PASSWORD = os.environ.get('SQLA_DB_PASSWORD', 'powerdns-svc-user-pw')|g" /powerdns-admin/config.py && \
   sed -i "s|SQLA_DB_HOST =.*|SQLA_DB_HOST = os.environ.get('SQLA_DB_HOST', 'powerdns-admin-mysql')|g" /powerdns-admin/config.py && \
   sed -i "s|SQLA_DB_PORT =.*|SQLA_DB_PORT = os.environ.get('SQLA_DB_PORT', '3306')|g" /powerdns-admin/config.py && \
   sed -i "s|SQLA_DB_NAME =.*|SQLA_DB_NAME = os.environ.get('SQLA_DB_NAME', 'powerdns-admin')|g" /powerdns-admin/config.py && \
   sed -i "s|LOG_FILE =.*|LOG_FILE = ''|g" /powerdns-admin/config.py && \
+  sed -i "s|SALT =.*|SALT = '$2b$12$yLUMTIfl21FKJQpTkRQXCu'|g" /powerdns-admin/config.py && \
   echo "SIGNUP_ENABLED = os.environ.get('SIGNUP_ENABLED', 'false')" >> /powerdns-admin/config.py
-
-# Fix the permissions
-RUN chown -R www-data:www-data /powerdns-admin/
 
 # Copy the entrypoint script to the image and make is executable
 COPY entrypoint.sh /powerdns-admin/entrypoint.sh
