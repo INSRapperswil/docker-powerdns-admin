@@ -16,15 +16,15 @@ LABEL maintainer="Philip Schmid <docker@ins.hsr.ch>"
 WORKDIR /powerdns-admin
 
 # Only copy the required files to the final image
-COPY --from=builder /powerdns-admin/config_template.py ./config.py
-COPY --from=builder /powerdns-admin/app/ ./app/
+COPY --from=builder /powerdns-admin/powerdnsadmin/default_config.py ./config.py
+COPY --from=builder /powerdns-admin/powerdnsadmin/ ./app/
 COPY --from=builder /powerdns-admin/migrations/ ./migrations/
 COPY --from=builder /powerdns-admin/LICENSE .
 COPY --from=builder /powerdns-admin/package.json .
 COPY --from=builder /powerdns-admin/requirements.txt .
 COPY --from=builder /powerdns-admin/run.py .
 COPY --from=builder /powerdns-admin/.yarnrc .
-COPY --from=builder /powerdns-admin/init_data.py .
+# COPY --from=builder /powerdns-admin/init_data.py .
 
 # Install curl which is used to download node/yarn related APT repository stuff
 RUN apt-get update -y && \
@@ -81,9 +81,9 @@ RUN flask assets build
 RUN chown -R www-data:www-data /powerdns-admin/
 
 # Set some default values into the default config.py file.
-# The SALT is only added because it is used by PowerDNS-Admin
+# The SALT is beeing used to create API-Keys
 # (see https://github.com/ngoduykhanh/PowerDNS-Admin/blob/dfce7eb5379552bf35da1c936857bd1ff2dd664d/app/models.py#L2310).
-# Fortunately this image does not use a static salt for the first admin user when its created via ADMIN_USER and ADMIN_PASSWORD.
+# Unfortunately this image does not use a static salt for the first admin user when its created via ADMIN_USER and ADMIN_PASSWORD.
 RUN sed -i "s|SECRET_KEY =.*|SECRET_KEY = os.environ.get('SECRET_KEY', 'MyAwesomeSecretKey')|g" /powerdns-admin/config.py && \
   sed -i "s|BIND_ADDRESS =.*|BIND_ADDRESS = os.environ.get('BIND_ADDRESS', '0.0.0.0')|g" /powerdns-admin/config.py && \
   sed -i "s|PORT =.*|PORT = os.environ.get('PORT', '9191')|g" /powerdns-admin/config.py && \
@@ -94,7 +94,7 @@ RUN sed -i "s|SECRET_KEY =.*|SECRET_KEY = os.environ.get('SECRET_KEY', 'MyAwesom
   sed -i "s|SQLA_DB_PORT =.*|SQLA_DB_PORT = os.environ.get('SQLA_DB_PORT', '3306')|g" /powerdns-admin/config.py && \
   sed -i "s|SQLA_DB_NAME =.*|SQLA_DB_NAME = os.environ.get('SQLA_DB_NAME', 'powerdns-admin')|g" /powerdns-admin/config.py && \
   sed -i "s|LOG_FILE =.*|LOG_FILE = ''|g" /powerdns-admin/config.py && \
-  sed -i "s|SALT =.*|SALT = '$2b$12$yLUMTIfl21FKJQpTkRQXCu'|g" /powerdns-admin/config.py
+  sed -i "s|SALT =.*|SALT = os.environ.get('SALT', '\$2b\$12\$yLUMTIfl21FKJQpTkRQXCu')|g" /powerdns-admin/config.py
 
 # Copy the entrypoint script to the image and make is executable
 COPY entrypoint.sh /powerdns-admin/entrypoint.sh
