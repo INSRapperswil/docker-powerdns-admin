@@ -82,6 +82,7 @@ environment:
   ADMIN_USER: admin
   ADMIN_USER_PASSWORD: 12345
   SECRET_KEY: <generate-and-insert-a-random-key-string-here>
+  # Escape the "$" with an additional "$": SALT: '$$2b$$12$$m3g0pU8pdc4pGcgqKeFZOO'
   SALT: <generate-bcrypt-salt-and-insert-here>
   BIND_ADDRESS: 0.0.0.0
   PORT: 9191
