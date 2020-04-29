@@ -15,6 +15,7 @@ services:
       ADMIN_USER: admin
       ADMIN_USER_PASSWORD: 12345
       SECRET_KEY: I0o3qqd2eQE859gPpVCGm4EYW4fJTVnGnX2dJZ9YIejq20SJ77tW
+      SALT: '$$2b$$12$$m3g0pU8pdc4pGcgqKeFZOO'
       LOG_LEVEL: INFO
       SQLA_DB_HOST: powerdns-admin-mysql
       SQLA_DB_NAME: powerdns-admin
@@ -22,7 +23,7 @@ services:
       SQLA_DB_PASSWORD: powerdns-admin-svc-user-pw
       PDNS_HOST: pdns-server
       PDNS_API_KEY: changeme
-      PDNS_VERSION: 4.1.1
+      PDNS_VERSION: 4.1.10
     depends_on:
       - powerdns-admin-mysql
 
@@ -47,8 +48,8 @@ services:
     hostname: powerdns
     restart: unless-stopped
     ports:
-      - "53:53"
-      - "53:53/udp"
+      - "5300:53"
+      - "5300:53/udp"
     command: >
       --api=yes
       --api-key=changeme

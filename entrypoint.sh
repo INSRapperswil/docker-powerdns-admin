@@ -125,7 +125,7 @@ if [[ ${SIGNUP_ENABLED} == "False" ]]; then
   echo "===> Update default admin account"
   mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'local_db_enabled', 'True') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'local_db_enabled') LIMIT 1;"
   mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO setting (name, value) SELECT * FROM (SELECT 'signup_enabled', '${SIGNUP_ENABLED}') AS tmp WHERE NOT EXISTS (SELECT name FROM setting WHERE name = 'signup_enabled') LIMIT 1;"
-  mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO user (username, password, firstname, lastname, email, avatar, otp_secret, role_id) SELECT * FROM (SELECT '${ADMIN_USER}' as username, '${ADMIN_USER_PASSWORD_HASHED}' as password, 'admin' as firstname, 'admin' as lastname, 'admin@example.com' as email, NULL as avatar, NULL as otp_secret, 1 as role_id) AS tmp WHERE NOT EXISTS (SELECT username FROM user WHERE username = '${ADMIN_USER}') LIMIT 1;"
+  mysql -h${SQLA_DB_HOST} -u${SQLA_DB_USER} -p${SQLA_DB_PASSWORD} -P${SQLA_DB_PORT} ${SQLA_DB_NAME} -e "INSERT INTO user (username, password, firstname, lastname, email, otp_secret, role_id, confirmed) SELECT * FROM (SELECT '${ADMIN_USER}' as username, '${ADMIN_USER_PASSWORD_HASHED}' as password, 'admin' as firstname, 'admin' as lastname, 'admin@example.com' as email, NULL as otp_secret, 1 as role_id, FALSE as confirmed) AS tmp WHERE NOT EXISTS (SELECT username FROM user WHERE username = '${ADMIN_USER}') LIMIT 1;"
 fi
 
 # Update pdns api setting if environment variable is changed.

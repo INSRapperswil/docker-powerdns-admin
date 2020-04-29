@@ -16,15 +16,14 @@ LABEL maintainer="Philip Schmid <docker@ins.hsr.ch>"
 WORKDIR /powerdns-admin
 
 # Only copy the required files to the final image
-COPY --from=builder /powerdns-admin/powerdnsadmin/default_config.py ./config.py
-COPY --from=builder /powerdns-admin/powerdnsadmin/ ./app/
+COPY --from=builder /powerdns-admin/powerdnsadmin/ ./powerdnsadmin/
 COPY --from=builder /powerdns-admin/migrations/ ./migrations/
 COPY --from=builder /powerdns-admin/LICENSE .
 COPY --from=builder /powerdns-admin/package.json .
 COPY --from=builder /powerdns-admin/requirements.txt .
 COPY --from=builder /powerdns-admin/run.py .
 COPY --from=builder /powerdns-admin/.yarnrc .
-# COPY --from=builder /powerdns-admin/init_data.py .
+COPY --from=builder /powerdns-admin/update_zones.py .
 
 # Install curl which is used to download node/yarn related APT repository stuff
 RUN apt-get update -y && \
@@ -65,7 +64,8 @@ RUN apt-get update -y && \
 
 ENV LC_ALL=en_US.UTF-8 \
   LANG=en_US.UTF-8 \
-  LANGUAGE=en_US.UTF-8
+  LANGUAGE=en_US.UTF-8 \
+  FLASK_APP=/powerdns-admin/powerdnsadmin/__init__.py
 
 # Ensure the node_modules, logs and upload directory are present
 RUN mkdir -p /powerdns-admin/node_modules \
@@ -77,24 +77,10 @@ RUN pip3 install -r requirements.txt
 RUN yarn install --pure-lockfile
 RUN flask assets build
 
+COPY docker_config.py /powerdns-admin/powerdnsadmin/docker_config.py
+
 # Fix the permissions
 RUN chown -R www-data:www-data /powerdns-admin/
-
-# Set some default values into the default config.py file.
-# The SALT is beeing used to create API-Keys
-# (see https://github.com/ngoduykhanh/PowerDNS-Admin/blob/dfce7eb5379552bf35da1c936857bd1ff2dd664d/app/models.py#L2310).
-# Unfortunately this image does not use a static salt for the first admin user when its created via ADMIN_USER and ADMIN_PASSWORD.
-RUN sed -i "s|SECRET_KEY =.*|SECRET_KEY = os.environ.get('SECRET_KEY', 'MyAwesomeSecretKey')|g" /powerdns-admin/config.py && \
-  sed -i "s|BIND_ADDRESS =.*|BIND_ADDRESS = os.environ.get('BIND_ADDRESS', '0.0.0.0')|g" /powerdns-admin/config.py && \
-  sed -i "s|PORT =.*|PORT = os.environ.get('PORT', '9191')|g" /powerdns-admin/config.py && \
-  sed -i "s|LOG_LEVEL =.*|LOG_LEVEL = os.environ.get('LOG_LEVEL', 'info')|g" /powerdns-admin/config.py && \
-  sed -i "s|SQLA_DB_USER =.*|SQLA_DB_USER = os.environ.get('SQLA_DB_USER', 'powerdns-svc-user')|g" /powerdns-admin/config.py && \
-  sed -i "s|SQLA_DB_PASSWORD =.*|SQLA_DB_PASSWORD = os.environ.get('SQLA_DB_PASSWORD', 'powerdns-svc-user-pw')|g" /powerdns-admin/config.py && \
-  sed -i "s|SQLA_DB_HOST =.*|SQLA_DB_HOST = os.environ.get('SQLA_DB_HOST', 'powerdns-admin-mysql')|g" /powerdns-admin/config.py && \
-  sed -i "s|SQLA_DB_PORT =.*|SQLA_DB_PORT = os.environ.get('SQLA_DB_PORT', '3306')|g" /powerdns-admin/config.py && \
-  sed -i "s|SQLA_DB_NAME =.*|SQLA_DB_NAME = os.environ.get('SQLA_DB_NAME', 'powerdns-admin')|g" /powerdns-admin/config.py && \
-  sed -i "s|LOG_FILE =.*|LOG_FILE = ''|g" /powerdns-admin/config.py && \
-  sed -i "s|SALT =.*|SALT = os.environ.get('SALT', '\$2b\$12\$yLUMTIfl21FKJQpTkRQXCu')|g" /powerdns-admin/config.py
 
 # Copy the entrypoint script to the image and make is executable
 COPY entrypoint.sh /powerdns-admin/entrypoint.sh
@@ -104,7 +90,8 @@ RUN chmod 755 /powerdns-admin/entrypoint.sh
 USER www-data
 
 # Configure the app startup
-ENV FLASK_APP=app/__init__.py
 EXPOSE 9191/tcp
+
+HEALTHCHECK CMD ["wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1/"]
 ENTRYPOINT ["/powerdns-admin/entrypoint.sh"]
-CMD ["gunicorn","app:app"]
+CMD ["gunicorn","powerdnsadmin:create_app()","--user","www-data","--group","www-data"]

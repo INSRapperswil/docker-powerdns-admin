@@ -28,7 +28,7 @@ Set the following environment variables to configure the connection to the Power
 PDNS_HOST: pdns-server
 PDNS_API_KEY: changeme
 PDNS_PORT: 8081
-PDNS_VERSION: 4.1.1
+PDNS_VERSION: 4.1.10
 PDNS_PROTO: http
 ```
 **Important:** The values shown here are the defaults of this Docker image.
@@ -63,6 +63,7 @@ environment:
   ADMIN_USER: admin
   ADMIN_USER_PASSWORD: 12345
   SECRET_KEY: <generate-and-insert-a-random-key-string-here>
+  SALT: <generate-bcrypt-salt-and-insert-here>
   LOG_LEVEL: INFO
   SQLA_DB_HOST: powerdns-admin-mysql
   SQLA_DB_NAME: powerdns-admin
@@ -70,7 +71,7 @@ environment:
   SQLA_DB_PASSWORD: powerdns-admin-svc-user-pw
   PDNS_HOST: pdns-server
   PDNS_API_KEY: changeme
-  PDNS_VERSION: 4.1.1
+  PDNS_VERSION: 4.1.10
 ```
 
 ### All Possible Configurations
@@ -81,6 +82,7 @@ environment:
   ADMIN_USER: admin
   ADMIN_USER_PASSWORD: 12345
   SECRET_KEY: <generate-and-insert-a-random-key-string-here>
+  SALT: <generate-bcrypt-salt-and-insert-here>
   BIND_ADDRESS: 0.0.0.0
   PORT: 9191
   GUINCORN_TIMEOUT: 120
@@ -94,7 +96,7 @@ environment:
   PDNS_HOST: pdns-server
   PDNS_API_KEY: changeme
   PDNS_PORT: 8081
-  PDNS_VERSION: 4.1.1
+  PDNS_VERSION: 4.1.10
   PDNS_PROTO: http
 ```
 
