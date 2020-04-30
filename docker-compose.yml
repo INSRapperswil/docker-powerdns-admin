@@ -14,8 +14,8 @@ services:
       SIGNUP_ENABLED: 'False'
       ADMIN_USER: admin
       ADMIN_USER_PASSWORD: 12345
+      SALT: $$2b$$12$$gmPOvn57H16qlj5kJtJlH.
       SECRET_KEY: I0o3qqd2eQE859gPpVCGm4EYW4fJTVnGnX2dJZ9YIejq20SJ77tW
-      SALT: '$$2b$$12$$m3g0pU8pdc4pGcgqKeFZOO'
       LOG_LEVEL: INFO
       SQLA_DB_HOST: powerdns-admin-mysql
       SQLA_DB_NAME: powerdns-admin
@@ -26,14 +26,18 @@ services:
       PDNS_VERSION: 4.1.10
     depends_on:
       - powerdns-admin-mysql
+    healthcheck:
+      test: ["CMD", "curl" ,"-f", "http://127.0.0.1:9191/"]
+      timeout: 10s
+      retries: 5
 
   powerdns-admin-mysql:
     image: mysql/mysql-server:8.0.17
     hostname: powerdns-admin-db
     restart: unless-stopped
     # To persist the mysql data:
-    #volumes:
-      #- /path/to/mysql/data:/var/lib/mysql
+    # volumes:
+    #   - /path/to/pdns-mysql/data:/var/lib/mysql
     environment:
       MYSQL_DATABASE: powerdns-admin
       MYSQL_USER: powerdns-admin-svc-user

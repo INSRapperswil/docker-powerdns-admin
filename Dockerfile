@@ -92,6 +92,5 @@ USER www-data
 # Configure the app startup
 EXPOSE 9191/tcp
 
-HEALTHCHECK CMD ["wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1/"]
 ENTRYPOINT ["/powerdns-admin/entrypoint.sh"]
 CMD ["gunicorn","powerdnsadmin:create_app()","--user","www-data","--group","www-data"]
