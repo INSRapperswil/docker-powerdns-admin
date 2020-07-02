@@ -57,7 +57,7 @@ GUINCORN_TIMEOUT: 120
 ## Configuration Example
 The following examples should provide you an overview which environment variables are available to configure the service with Docker environment variables.
 
-### Recommended Minimim Configuration
+### Recommended Minimum Configuration
 ```yaml
 environment:
   ADMIN_USER: admin
