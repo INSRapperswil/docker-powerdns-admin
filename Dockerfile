@@ -6,6 +6,7 @@ RUN apt-get update -y && \
 
 # Get the latest source from the master branch
 RUN git clone https://github.com/ngoduykhanh/PowerDNS-Admin.git /powerdns-admin/
+RUN cd /powerdns-admin && git checkout tags/v0.2.2
 
 # Use a clean base image for the final delivery of the application
 FROM ubuntu:18.04
