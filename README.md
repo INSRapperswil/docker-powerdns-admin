@@ -85,7 +85,7 @@ environment:
   # Escape the "$" with an additional "$": SALT: '$$2b$$12$$m3g0pU8pdc4pGcgqKeFZOO'
   SALT: <generate-bcrypt-salt-and-insert-here>
   BIND_ADDRESS: 0.0.0.0
-  PORT: 9191
+  PORT: 80
   GUINCORN_TIMEOUT: 120
   GUNICORN_WORKERS: 4
   LOG_LEVEL: INFO

@@ -9,7 +9,7 @@ if [[ -z ${BIND_ADDRESS} ]]; then
 fi
 
 if [[ -z ${PORT} ]]; then
-  PORT=9191;
+  PORT=80;
 fi
 
 if [[ -z ${LOG_LEVEL} ]]; then
@@ -42,7 +42,7 @@ if [[ -z ${PDNS_PROTO} ]]; then
 fi
 
 if [[ -z ${PDNS_VERSION} ]]; then
-  PDNS_VERSION=4.1.1;
+  PDNS_VERSION=4.1.10;
 fi
 
 # SQL settings
@@ -86,33 +86,33 @@ if [[ ${SIGNUP_ENABLED} == "False" ]]; then
   ADMIN_USER_PASSWORD_HASHED=$(python3 -c "import os; import bcrypt; print(bcrypt.hashpw(str(os.getenv('ADMIN_USER_PASSWORD', '12345')).encode(), bcrypt.gensalt()).decode())")
 fi
 
-# Wait for us to be able to connect to #mysql before proceeding
-echo "===> Waiting for $SQLA_DB_HOST #mysql service"
+# Wait for us to be able to connect to mysql before proceeding
+echo "===> Waiting for $SQLA_DB_HOST mysql service"
 until nc -zv \
   $SQLA_DB_HOST \
   $SQLA_DB_PORT;
 do
-  echo "mysql ($SQLA_DB_HOST) is unavailable - sleeping 2 seconds"
-  sleep 2
+  echo "mysql ($SQLA_DB_HOST) is unavailable - sleeping 5 seconds"
+  sleep 5
 done
 
 echo "===> DB management"
 # DB Migration directory
-DB_MIGRATION_DIR='/powerdns-admin/migrations'
+DB_MIGRATION_DIR='/app/migrations'
 # Go in Workdir
-cd /powerdns-admin
+cd /app
 
 if [ ! -d "${DB_MIGRATION_DIR}" ]; then
   echo "---> Running DB Init"
-  flask db init --directory ${DB_MIGRATION_DIR}
-  flask db migrate -m "Init DB" --directory ${DB_MIGRATION_DIR}
-  flask db upgrade --directory ${DB_MIGRATION_DIR}
+  su pda -s /bin/sh -c "flask db init --directory ${DB_MIGRATION_DIR}"
+  su pda -s /bin/sh -c "flask db migrate -m 'Init DB' --directory ${DB_MIGRATION_DIR}"
+  su pda -s /bin/sh -c "flask db upgrade --directory ${DB_MIGRATION_DIR}"
   ./init_data.py
 else
   echo "---> Running DB Migration"
   set +e
-  flask db migrate -m "Upgrade DB Schema" --directory ${DB_MIGRATION_DIR}
-  flask db upgrade --directory ${DB_MIGRATION_DIR}
+  su pda -s /bin/sh -c "flask db migrate -m 'Upgrade DB Schema' --directory ${DB_MIGRATION_DIR}"
+  su pda -s /bin/sh -c "flask db upgrade --directory ${DB_MIGRATION_DIR}"
   set -e
 fi
 

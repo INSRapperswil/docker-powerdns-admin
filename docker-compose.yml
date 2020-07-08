@@ -6,7 +6,7 @@ services:
     hostname: powerdns-admin
     restart: unless-stopped
     ports:
-      - "9191:9191"
+      - "80:80"
     # To override the default config.py:
     #volumes:
       #- /path/to/configs/config.py:/powerdns-admin/config.py
@@ -27,7 +27,7 @@ services:
     depends_on:
       - powerdns-admin-mysql
     healthcheck:
-      test: ["CMD", "curl" ,"-f", "http://127.0.0.1:9191/"]
+      test: ["CMD", "curl" ,"-f", "http://127.0.0.1"]
       timeout: 10s
       retries: 5
 

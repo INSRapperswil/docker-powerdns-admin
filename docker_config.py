@@ -5,7 +5,7 @@ basedir = os.path.abspath(os.path.abspath(os.path.dirname(__file__)))
 SALT = os.environ.get('SALT', '$2b$12$yLUMTIfl21FKJQpTkRQXCu')
 SECRET_KEY = os.environ.get('SECRET_KEY', 'MyAwesomeSecretKey')
 BIND_ADDRESS = os.environ.get('BIND_ADDRESS', '0.0.0.0')
-PORT = os.environ.get('PORT', '9191')
+PORT = os.environ.get('PORT', '80')
 HSTS_ENABLED = False
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'info')

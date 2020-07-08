@@ -1,97 +1,97 @@
-FROM ubuntu:18.04 as builder
+FROM alpine:3.11 AS builder
+LABEL maintainer="k@ndk.name"
 
-# Install some required packages
-RUN apt-get update -y && \
-    apt-get install -y git
-
-# Get the latest source from the master branch
-RUN git clone https://github.com/ngoduykhanh/PowerDNS-Admin.git /powerdns-admin/
-RUN cd /powerdns-admin && git checkout tags/v0.2.2
-
-# Use a clean base image for the final delivery of the application
-FROM ubuntu:18.04
-
-LABEL maintainer="Philip Schmid <docker@ins.hsr.ch>"
-
-# Switch the working directory to /powerdns-admin
-WORKDIR /powerdns-admin
-
-# Only copy the required files to the final image
-COPY --from=builder /powerdns-admin/powerdnsadmin/ ./powerdnsadmin/
-COPY --from=builder /powerdns-admin/migrations/ ./migrations/
-COPY --from=builder /powerdns-admin/LICENSE .
-COPY --from=builder /powerdns-admin/package.json .
-COPY --from=builder /powerdns-admin/requirements.txt .
-COPY --from=builder /powerdns-admin/run.py .
-COPY --from=builder /powerdns-admin/.yarnrc .
-COPY --from=builder /powerdns-admin/update_zones.py .
-
-# Install curl which is used to download node/yarn related APT repository stuff
-RUN apt-get update -y && \
-    apt-get install -y \
-      curl \
-      apt-transport-https \
-      gnupg2 \
-    && apt-get clean -y \
-  	&& rm -rf /var/lib/apt/lists/*
-
-# Add node repository and install nodejs, yarn
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
-
-# Install the required packages. Netcat is only required for DB healthchecks.
-RUN apt-get update -y && \
-    apt-get install -y \
-      locales \
-      locales-all \
-      python3-pip \
-      python3-dev \
-      mysql-client \
-      netcat \
-      yarn \
-      nodejs \
-      libmysqlclient-dev \
-      libsasl2-dev \
-      libldap2-dev \
-      libssl-dev \
-      libxml2-dev \
-      libxslt1-dev \
-      libxmlsec1-dev \
-      libffi-dev \
-      pkg-config \
-    && apt-get clean -y \
-  	&& rm -rf /var/lib/apt/lists/*
+ARG BUILD_DEPENDENCIES="build-base \
+    libffi-dev \
+    libxml2-dev \
+    mariadb-connector-c-dev \
+    openldap-dev \
+    py3-pip \
+    python3-dev \
+    xmlsec-dev \
+    yarn \
+    git"
 
 ENV LC_ALL=en_US.UTF-8 \
-  LANG=en_US.UTF-8 \
-  LANGUAGE=en_US.UTF-8 \
-  FLASK_APP=/powerdns-admin/powerdnsadmin/__init__.py
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8 \
+    FLASK_APP=/build/powerdnsadmin/__init__.py
 
-# Ensure the node_modules, logs and upload directory are present
-RUN mkdir -p /powerdns-admin/node_modules \
-  /powerdns-admin/logs \
-  /powerdns-admin/upload/avatar
+# Get dependencies
+RUN apk add --no-cache ${BUILD_DEPENDENCIES} && \
+    ln -s /usr/bin/pip3 /usr/bin/pip
 
-# Install all dependencies
-RUN pip3 install -r requirements.txt
-RUN yarn install --pure-lockfile
-RUN flask assets build
 
-COPY docker_config.py /powerdns-admin/powerdnsadmin/docker_config.py
+# Get the source from the master branch
+RUN git clone https://github.com/ngoduykhanh/PowerDNS-Admin.git /build/
+RUN cd /build && git checkout tags/v0.2.2
 
-# Fix the permissions
-RUN chown -R www-data:www-data /powerdns-admin/
+WORKDIR /build
 
-# Copy the entrypoint script to the image and make is executable
-COPY entrypoint.sh /powerdns-admin/entrypoint.sh
-RUN chmod 755 /powerdns-admin/entrypoint.sh
+# Get application dependencies
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-# Drop permissions
-USER www-data
+# Prepare assets
+RUN yarn install --pure-lockfile --production && \
+    yarn cache clean && \
+    sed -i -r -e "s|'cssmin',\s?'cssrewrite'|'cssmin'|g" /build/powerdnsadmin/assets.py && \
+    flask assets build
 
-# Configure the app startup
-EXPOSE 9191/tcp
+RUN mv /build/powerdnsadmin/static /tmp/static && \
+    mkdir /build/powerdnsadmin/static && \
+    cp -r /tmp/static/generated /build/powerdnsadmin/static && \
+    cp -r /tmp/static/assets /build/powerdnsadmin/static && \
+    cp -r /tmp/static/img /build/powerdnsadmin/static && \
+    find /tmp/static/node_modules -name 'fonts' -exec cp -r {} /build/powerdnsadmin/static \; && \
+    find /tmp/static/node_modules/icheck/skins/square -name '*.png' -exec cp {} /build/powerdnsadmin/static/generated \;
 
-ENTRYPOINT ["/powerdns-admin/entrypoint.sh"]
-CMD ["gunicorn","powerdnsadmin:create_app()","--user","www-data","--group","www-data"]
+RUN { \
+      echo "from flask_assets import Environment"; \
+      echo "assets = Environment()"; \
+      echo "assets.register('js_login', 'generated/login.js')"; \
+      echo "assets.register('js_validation', 'generated/validation.js')"; \
+      echo "assets.register('css_login', 'generated/login.css')"; \
+      echo "assets.register('js_main', 'generated/main.js')"; \
+      echo "assets.register('css_main', 'generated/main.css')"; \
+    } > /build/powerdnsadmin/assets.py
+
+# Move application
+RUN mkdir -p /app && \
+    cp -r /build/migrations/ /build/powerdnsadmin/ /build/run.py /app
+
+COPY docker_config.py /app/powerdnsadmin/default_config.py
+
+# Cleanup
+RUN pip install pip-autoremove && \
+    pip-autoremove cssmin -y && \
+    pip-autoremove jsmin -y && \
+    pip-autoremove pytest -y && \
+    pip uninstall -y pip-autoremove && \
+    apk del ${BUILD_DEPENDENCIES}
+
+
+# Build image
+FROM alpine:3.11
+
+ENV FLASK_APP=/app/powerdnsadmin/__init__.py
+
+RUN apk add --no-cache mariadb-connector-c postgresql-client py3-gunicorn py3-psycopg2 xmlsec tzdata bash mysql-client && \
+    addgroup -S pda && \
+    adduser -S -D --no-create-home -G pda pda && \
+    mkdir /data && \
+    chown pda:pda /data
+
+COPY --from=builder /usr/bin/flask /usr/bin/
+COPY --from=builder /usr/lib/python3.8/site-packages /usr/lib/python3.8/site-packages/
+COPY --from=builder --chown=pda:pda /app /app/
+
+COPY entrypoint.sh /usr/bin/
+RUN chmod 755 /usr/bin/entrypoint.sh
+
+WORKDIR /app
+
+EXPOSE 80/tcp
+HEALTHCHECK CMD ["wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1/"]
+ENTRYPOINT ["bash", "/usr/bin/entrypoint.sh"]
+CMD ["gunicorn","powerdnsadmin:create_app()","--user","pda","--group","pda"]
