@@ -27,7 +27,7 @@ services:
     depends_on:
       - powerdns-admin-mysql
     healthcheck:
-      test: ["CMD", "curl" ,"-f", "http://127.0.0.1"]
+      test: ["CMD","wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1/"]
       timeout: 10s
       retries: 5
 
