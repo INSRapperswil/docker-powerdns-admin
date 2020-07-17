@@ -71,7 +71,7 @@ environment:
   SQLA_DB_PASSWORD: powerdns-admin-svc-user-pw
   PDNS_HOST: pdns-server
   PDNS_API_KEY: changeme
-  PDNS_VERSION: 4.1.10
+  PDNS_VERSION: 4.3.0
 ```
 
 ### All Possible Configurations
