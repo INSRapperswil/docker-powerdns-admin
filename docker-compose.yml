@@ -32,7 +32,7 @@ services:
       retries: 5
 
   powerdns-admin-mysql:
-    image: mysql/mysql-server:8.0.17
+    image: mysql/mysql-server:8.0.21
     hostname: powerdns-admin-db
     restart: unless-stopped
     # To persist the mysql data:
@@ -48,7 +48,7 @@ services:
       retries: 5
 
   pdns-server:
-    image: psitrax/powerdns:4.1.10
+    image: psitrax/powerdns:v4.3.0
     hostname: powerdns
     restart: unless-stopped
     ports:
@@ -68,7 +68,7 @@ services:
       - pdns-server-mysql
 
   pdns-server-mysql:
-    image: mysql/mysql-server:8.0.17
+    image: mysql/mysql-server:8.0.21
     hostname: powerdns-db
     restart: unless-stopped
     # To persist the mysql data:

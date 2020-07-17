@@ -28,7 +28,7 @@ Set the following environment variables to configure the connection to the Power
 PDNS_HOST: pdns-server
 PDNS_API_KEY: changeme
 PDNS_PORT: 8081
-PDNS_VERSION: 4.1.10
+PDNS_VERSION: 4.3.0
 PDNS_PROTO: http
 ```
 **Important:** The values shown here are the defaults of this Docker image.
@@ -97,7 +97,7 @@ environment:
   PDNS_HOST: pdns-server
   PDNS_API_KEY: changeme
   PDNS_PORT: 8081
-  PDNS_VERSION: 4.1.10
+  PDNS_VERSION: 4.3.0
   PDNS_PROTO: http
 ```
 
