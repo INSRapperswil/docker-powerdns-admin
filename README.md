@@ -105,3 +105,6 @@ environment:
 ```bash
 docker-compose up -d
 ```
+
+## Versioning
+The versioning of this image should be alligned with the [versioning of ngoduykhanh/PowerDNS-Admin](https://github.com/ngoduykhanh/PowerDNS-Admin/tags). If [ngoduykhanh/PowerDNS-Admin](https://github.com/ngoduykhanh/PowerDNS-Admin) releases a new version, we should simply update our `VERSION` file with the regarding Git tag in order to build an updated Docker image version. Since the value from the `VERSION` file is taken as `--build-arg VERSION`, the automated Docker Hub build should automatically use the specified [ngoduykhanh/PowerDNS-Admin](https://github.com/ngoduykhanh/PowerDNS-Admin) release.

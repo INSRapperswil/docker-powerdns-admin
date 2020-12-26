@@ -1,2 +1,3 @@
 #!/bin/sh
-docker build -t $IMAGE_NAME .
+VER=`cat VERSION`
+docker build --build-arg VERSION=$VER -t $IMAGE_NAME .

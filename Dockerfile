@@ -1,4 +1,4 @@
-FROM alpine:3.11 AS builder
+FROM alpine:3.12 AS builder
 LABEL maintainer="k@ndk.name"
 
 ARG BUILD_DEPENDENCIES="build-base \
@@ -12,19 +12,20 @@ ARG BUILD_DEPENDENCIES="build-base \
     yarn \
     git"
 
+ARG VERSION="v0.2.3"
+
 ENV LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
     LANGUAGE=en_US.UTF-8 \
     FLASK_APP=/build/powerdnsadmin/__init__.py
 
 # Get dependencies
-RUN apk add --no-cache ${BUILD_DEPENDENCIES} && \
-    ln -s /usr/bin/pip3 /usr/bin/pip
+RUN apk add --no-cache ${BUILD_DEPENDENCIES}
 
 
 # Get the source from the master branch
 RUN git clone https://github.com/ngoduykhanh/PowerDNS-Admin.git /build/
-RUN cd /build && git checkout tags/v0.2.2
+RUN cd /build && git checkout tags/${VERSION}
 
 WORKDIR /build
 
@@ -72,7 +73,7 @@ RUN pip install pip-autoremove && \
 
 
 # Build image
-FROM alpine:3.11
+FROM alpine:3.12
 
 ENV FLASK_APP=/app/powerdnsadmin/__init__.py
 
